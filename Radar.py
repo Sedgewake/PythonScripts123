@@ -26,7 +26,6 @@ class Node:
         self._bind_events()
 
     def calculate_width(self, text):
-        # Estimate width based on text length
         return max(100, 10 + len(text) * 8)
 
     def _bind_events(self):
@@ -78,10 +77,16 @@ class Node:
     def open_note_editor(self, event=None):
         editor = Toplevel(self.canvas)
         editor.title("Edit Note")
-        editor.geometry("300x200")
-        editor.transient(self.canvas.winfo_toplevel())
 
-        text_area = Text(editor, wrap="word")
+        if event:
+            editor.geometry(f"300x200+{event.x_root}+{event.y_root}")
+        else:
+            editor.geometry("300x200")
+
+        editor.transient(self.canvas.winfo_toplevel())
+        editor.configure(bg="#323232")
+
+        text_area = Text(editor, wrap="word", bg="#323232", fg="white", insertbackground="white")
         text_area.insert("1.0", self.note)
         text_area.pack(expand=True, fill="both")
 
