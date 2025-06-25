@@ -108,7 +108,7 @@ class Node:
             self.tooltip.overrideredirect(True)
             self.tooltip.geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
             preview = self.note.split("\n")[0][:50] + ("..." if len(self.note) > 50 else "")
-            label = tk.Label(self.tooltip, text=preview, bg="yellow", relief="solid", borderwidth=1)
+            label = tk.Label(self.tooltip, text=preview, bg="lightblue", relief="solid", borderwidth=1)
             label.pack()
 
     def hide_tooltip(self, event):
