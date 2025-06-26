@@ -134,7 +134,7 @@ class Node:
 class NodeEditorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Node Editor")
+        self.root.title("MindScape")
         self.nodes = []
 
         self.toolbar = tk.Frame(root)
