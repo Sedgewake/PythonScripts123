@@ -26,7 +26,6 @@ class Node:
         self._bind_events()
 
     def calculate_width(self, text):
-        # Estimate width based on text length
         return max(100, 10 + len(text) * 8)
 
     def _bind_events(self):
@@ -78,10 +77,16 @@ class Node:
     def open_note_editor(self, event=None):
         editor = Toplevel(self.canvas)
         editor.title("Edit Note")
-        editor.geometry("300x200")
-        editor.transient(self.canvas.winfo_toplevel())
 
-        text_area = Text(editor, wrap="word")
+        if event:
+            editor.geometry(f"300x200+{event.x_root}+{event.y_root}")
+        else:
+            editor.geometry("300x200")
+
+        editor.transient(self.canvas.winfo_toplevel())
+        editor.configure(bg="#323232")
+
+        text_area = Text(editor, wrap="word", bg="#323232", fg="white", insertbackground="white")
         text_area.insert("1.0", self.note)
         text_area.pack(expand=True, fill="both")
 
@@ -108,7 +113,7 @@ class Node:
             self.tooltip.overrideredirect(True)
             self.tooltip.geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
             preview = self.note.split("\n")[0][:50] + ("..." if len(self.note) > 50 else "")
-            label = tk.Label(self.tooltip, text=preview, bg="yellow", relief="solid", borderwidth=1)
+            label = tk.Label(self.tooltip, text=preview, bg="lightblue", relief="solid", borderwidth=1)
             label.pack()
 
     def hide_tooltip(self, event):
@@ -154,7 +159,12 @@ class NodeEditorApp:
         data = [node.to_dict() for node in self.nodes if not node.deleted]
         with open(SAVE_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
-        messagebox.showinfo("Saved", f"{len(data)} node(s) saved to {SAVE_FILE}")
+			
+        notification_label = tk.Label(self.toolbar, text=f"{len(data)} node(s) saved to {SAVE_FILE}", bg="white", fg="black", padx=10, pady=4, relief="solid", borderwidth=1)
+        notification_label.pack(side=tk.LEFT, padx=5, pady=5)
+        notification_label.after(1000, notification_label.destroy)
+		
+        #messagebox.showinfo("Saved", f"{len(data)} node(s) saved to {SAVE_FILE}")
 
     def load_nodes(self):
         if not os.path.exists(SAVE_FILE):
