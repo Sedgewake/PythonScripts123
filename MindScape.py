@@ -160,7 +160,7 @@ class NodeEditorApp:
         with open(SAVE_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
 			
-        notification_label = tk.Label(self.toolbar, text=f"{len(data)} node(s) saved to {SAVE_FILE}", bg="white", fg="black", padx=10, pady=4, relief="solid", borderwidth=1)
+        notification_label = tk.Label(self.toolbar, text=f"{len(data)} node(s) saved to {SAVE_FILE}", bg="lightblue", fg="black", padx=10, pady=4, relief="solid", borderwidth=1)
         notification_label.pack(side=tk.LEFT, padx=5, pady=5)
         notification_label.after(1000, notification_label.destroy)
 		
