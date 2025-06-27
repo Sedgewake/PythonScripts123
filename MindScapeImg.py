@@ -6,18 +6,22 @@ import json
 import os
 import base64
 import io
+import subprocess
 
 SAVE_FILE = "nodes.json"
 
 class Node:
-    def __init__(self, canvas, x, y, text="New Node", note="", color="lightblue", image_data=None):
+    def __init__(self, canvas, x, y, text="New Node", note="", color="lightblue", image_data=None, image_path=None):
         self.canvas = canvas
         self.text = text
         self.note = note
         self.color = color
         self.image_data = image_data
+        self.image_path = image_path
         self.tk_image = None
         self.image_id = None
+        self.file_attachment_id = None
+        self.file_attachment_text_id = None
         self.x = x
         self.y = y
         self.height = 40
@@ -29,11 +33,13 @@ class Node:
         self.label = canvas.create_text(x + self.width // 2, y + self.height // 2, text=text, tags="node")
         self.note_button = canvas.create_text(x + self.width - 10, y + 10, text="📝", tags="node", font=("Arial", 10))
         self.color_button = canvas.create_text(x + 10, y + 10, text="🎨", tags="node", font=("Arial", 10))
-        self.image_button = canvas.create_text(x + self.width - 10, y + self.height - 12, text="🖼", tags="node", font=("Arial", 10))
+        self.image_button = canvas.create_text(x + self.width - 10, y + 28, text="📂", tags="node", font=("Arial", 10))
 
         self._bind_events()
         if self.image_data:
             self.load_image_from_data()
+        elif self.image_path:
+            self.create_file_attachment()
 
     def calculate_width(self, text):
         return max(100, 10 + len(text) * 8)
@@ -62,6 +68,10 @@ class Node:
             self.canvas.move(item, dx, dy)
         if self.image_id:
             self.canvas.move(self.image_id, dx, dy)
+        if self.file_attachment_id:
+            self.canvas.move(self.file_attachment_id, dx, dy)
+        if self.file_attachment_text_id:
+            self.canvas.move(self.file_attachment_text_id, dx, dy)
         self.drag_start_x = event.x
         self.drag_start_y = event.y
 
@@ -75,6 +85,10 @@ class Node:
             self.canvas.delete(item)
         if self.image_id:
             self.canvas.delete(self.image_id)
+        if self.file_attachment_id:
+            self.canvas.delete(self.file_attachment_id)
+        if self.file_attachment_text_id:
+           self.canvas.delete(self.file_attachment_text_id)
         self.deleted = True
 
     def edit_text(self, event):
@@ -88,7 +102,7 @@ class Node:
             self.width = new_width
             self.canvas.coords(self.label, coords[0] + new_width // 2, coords[1] + self.height // 2)
             self.canvas.coords(self.note_button, coords[0] + new_width - 10, coords[1] + 10)
-            self.canvas.coords(self.image_button, coords[0] + new_width // 2, coords[1] + self.height + 10)
+            self.canvas.coords(self.image_button, coords[0] + new_width - 10, coords[1] + 28)
 
     def open_note_editor(self, event=None):
         editor = Toplevel(self.canvas)
@@ -124,8 +138,25 @@ class Node:
             self.canvas.itemconfig(self.rect, fill=self.color)
 
     def pick_image(self, event=None):
-        file_path = filedialog.askopenfilename(title="Select Image", filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif")])
-        if file_path:
+        file_path = filedialog.askopenfilename(title="Select File")
+        if not file_path:
+            if self.file_attachment_id:
+                self.canvas.delete(self.file_attachment_id)
+                self.file_attachment_id = None
+            if self.file_attachment_text_id:
+                self.canvas.delete(self.file_attachment_text_id)
+                self.file_attachment_text_id = None
+            if self.image_id:
+                self.canvas.delete(self.image_id)
+                self.image_id = None
+            return
+
+        ext = os.path.splitext(file_path)[1].lower()
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        self.image_data = None
+        self.image_path = file_path
+
+        if ext in image_extensions:
             img = Image.open(file_path)
             ratio = 128 / max(img.width, img.height)
             img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
@@ -134,11 +165,13 @@ class Node:
             self.image_data = base64.b64encode(buffer.getvalue()).decode('utf-8')
             self.load_image_from_data()
         else:
-            self.image_data = None
-            if self.image_id:
-                self.canvas.delete(self.image_id)
+            self.create_file_attachment()
 
     def load_image_from_data(self):
+        if self.file_attachment_id:
+            self.canvas.delete(self.file_attachment_id)
+            self.file_attachment_id = None
+
         if self.image_data:
             raw_data = base64.b64decode(self.image_data)
             img = Image.open(io.BytesIO(raw_data))
@@ -149,6 +182,33 @@ class Node:
             if self.image_id:
                 self.canvas.delete(self.image_id)
             self.image_id = self.canvas.create_image(x, y, image=self.tk_image, tags="node")
+            self.canvas.tag_bind(self.image_id, "<Double-1>", self.open_original_image)
+
+    def create_file_attachment(self):
+        if self.image_id:
+            self.canvas.delete(self.image_id)
+            self.image_id = None
+
+        if self.file_attachment_id:
+            self.canvas.delete(self.file_attachment_id)
+            self.canvas.delete(self.file_attachment_text_id)
+
+        if self.image_path:
+            filename = os.path.basename(self.image_path)
+            coords = self.canvas.coords(self.rect)
+            x = coords[0] + self.width // 2
+            y = coords[1] - 15
+            self.file_attachment_id = self.canvas.create_rectangle(x - 60, y - 10, x + 60, y + 10, fill="gray", tags="node")
+            self.file_attachment_text_id = self.canvas.create_text(x, y, text=filename, fill="white", font=("Arial", 8), tags="node")
+            self.canvas.tag_bind(self.file_attachment_id, "<Double-1>", self.open_original_image)
+            self.canvas.tag_bind(self.file_attachment_text_id, "<Double-1>", self.open_original_image)
+
+    def open_original_image(self, event=None):
+        if self.image_path and os.path.exists(self.image_path):
+            try:
+                subprocess.Popen([self.image_path], shell=True)
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not open file:\n{e}")
 
     def show_tooltip(self, event):
         if self.note.strip():
@@ -172,8 +232,10 @@ class Node:
             "text": self.text,
             "note": self.note,
             "color": self.color,
-            "image_data": self.image_data
+            "image_data": self.image_data,
+            "image_path": self.image_path
         }
+
 
 class NodeEditorApp:
     def __init__(self, root):
@@ -195,8 +257,8 @@ class NodeEditorApp:
         self.draw_background()
         self.load_nodes()
 
-    def add_node(self, x=120, y=120, text="New Node", note="", color="lightblue", image_data=None):
-        node = Node(self.canvas, x, y, text=text, note=note, color=color, image_data=image_data)
+    def add_node(self, x=120, y=120, text="New Node", note="", color="lightblue", image_data=None, image_path=None):
+        node = Node(self.canvas, x, y, text=text, note=note, color=color, image_data=image_data, image_path=image_path)
         self.nodes.append(node)
 
     def save_nodes(self):
