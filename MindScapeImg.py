@@ -143,6 +143,7 @@ class Node:
             if self.file_attachment_id:
                 self.canvas.delete(self.file_attachment_id)
                 self.file_attachment_id = None
+                self.image_path = None
             if self.file_attachment_text_id:
                 self.canvas.delete(self.file_attachment_text_id)
                 self.file_attachment_text_id = None
