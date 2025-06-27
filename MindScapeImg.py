@@ -207,7 +207,8 @@ class Node:
     def open_original_image(self, event=None):
         if self.image_path and os.path.exists(self.image_path):
             try:
-                subprocess.Popen([self.image_path], shell=True)
+                os.startfile(self.image_path)
+                #subprocess.Popen([self.image_path], shell=True)
             except Exception as e:
                 messagebox.showerror("Error", f"Could not open file:\n{e}")
 
