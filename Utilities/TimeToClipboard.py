@@ -1,3 +1,4 @@
+# pip install pyperclip
 import pyperclip
 from datetime import datetime
 
