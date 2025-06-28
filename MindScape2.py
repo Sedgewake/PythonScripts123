@@ -159,7 +159,7 @@ class Node:
 
         if ext in image_extensions:
             img = Image.open(file_path)
-            ratio = 128 / max(img.width, img.height)
+            ratio = 100 / max(img.width, img.height)
             img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
