@@ -151,6 +151,7 @@ class Node:
                 self.canvas.delete(self.image_id)
                 self.image_id = None
                 self.image_data = None
+                self.image_path = None
             return
 
         ext = os.path.splitext(file_path)[1].lower()
