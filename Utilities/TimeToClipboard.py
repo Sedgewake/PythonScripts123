@@ -16,7 +16,7 @@ def copy_datetime_to_clipboard(western=True):
         date_part = now.strftime("%Y.%m.%d")  # YYYY.MM.DD
     
     # Combine time and date
-    formatted_datetime = f"{time_part}_{date_part}"
+    formatted_datetime = f"{time_part} {date_part}"
     
     # Copy to clipboard
     pyperclip.copy(formatted_datetime)
