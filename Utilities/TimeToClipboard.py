@@ -11,12 +11,14 @@ def copy_datetime_to_clipboard(western=True):
     
     # Format the date part based on the 'western' flag
     if western:
-        date_part = now.strftime("%Y.%d.%m")  # YYYY.DD.MM
-    else:
         date_part = now.strftime("%Y.%m.%d")  # YYYY.MM.DD
+        formatted_datetime = f"{date_part} {time_part}" # Combine time and date
+    else:
+        date_part = now.strftime("%d.%m.%Y")  # YYYY.DD.MM
+        formatted_datetime = f"{time_part} {date_part}" # Combine time and date
+
     
     # Combine time and date
-    formatted_datetime = f"{time_part}_{date_part}"
     
     # Copy to clipboard
     pyperclip.copy(formatted_datetime)
