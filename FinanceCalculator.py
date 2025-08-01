@@ -169,12 +169,12 @@ class FinanceCalcApp:
         select_frame = tk.Frame(tab, bg="#323232")
         select_frame.pack(pady=5)
         tk.Label(select_frame, text="Item:", font=("Arial", 20), fg="white", bg="#323232").pack(side="left")
-        self.item_selector = ttk.Combobox(select_frame, values=[item.name for item in self.available_items], style="Custom.TCombobox", font=("Arial", 20), height=20, width=10)
+        self.item_selector = ttk.Combobox(select_frame, values=[item.name for item in self.available_items], style="Custom.TCombobox", font=("Arial", 20), height=20, width=15)
         self.item_selector.set("")
         self.item_selector.pack(side="left")
         self.item_selector.bind("<<ComboboxSelected>>", self.item_change)
         tk.Label(select_frame, text="Type:", font=("Arial", 20), fg="white", bg="#323232").pack(side="left")
-        self.type_selector = ttk.Combobox(select_frame, values=[item for item in self.available_types], style="Custom.TCombobox", font=("Arial", 20), height=20, width=10)
+        self.type_selector = ttk.Combobox(select_frame, values=[item for item in self.available_types], style="Custom.TCombobox", font=("Arial", 20), height=20, width=12)
         self.type_selector.set("")
         self.type_selector.pack(side="left")
         tk.Label(select_frame, text="Price:", font=("Arial", 20), fg="white", bg="#323232").pack(side="left")
@@ -200,8 +200,20 @@ class FinanceCalcApp:
 
     def setup_tab_history(self):
         tab = tk.Frame(self.notebook, bg="#323232")
-        self.history_frame = tk.Frame(tab, bg="#323232")
-        self.history_frame.pack(fill="both", expand=True)
+        canvas = tk.Canvas(tab, bg="#323232", highlightthickness=0)
+        scrollbar = tk.Scrollbar(tab, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        # This frame will hold the scrollable content
+        self.history_frame = tk.Frame(canvas, bg="#323232")
+        self.history_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=self.history_frame, anchor="nw")
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
         self.refresh_history()
         self.notebook.add(tab, text="History")
 
@@ -245,6 +257,7 @@ class FinanceCalcApp:
             json.dump({
                 "balance": self.balance,
                 "item_list": [item.__dict__ for item in self.item_list],
+                "item_types": [item for item in self.available_types],
                 "items": [item.__dict__ for item in self.available_items],
                 "history": [op.to_dict() for op in self.operations]
 
@@ -256,6 +269,7 @@ class FinanceCalcApp:
                 data = json.load(f)
                 self.balance = data.get("balance", 0)
                 self.item_list = [Item(**item) for item in data.get("item_list", [])]
+                self.available_types = data.get("item_types", [])
                 self.operations = [Operation.from_dict(op) for op in data.get("history", [])]
                 self.available_items = [Item(**item) for item in data.get("items", [])]
 
