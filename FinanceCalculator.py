@@ -124,10 +124,6 @@ class FinanceCalcApp:
         self.available_types = []
         self.item_list = []
         self.operations = []
-        self.available_items.append(Item("Apple", "Food", 3000))
-        self.available_items.append(Item("ESP32", "Tech", 52000))
-        self.available_types.append("Food")
-        self.available_types.append("Tech")
 
         self.s1 = ttk.Style()
         self.s1.theme_use("default")
@@ -205,10 +201,14 @@ class FinanceCalcApp:
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        # This frame will hold the scrollable content
         self.history_frame = tk.Frame(canvas, bg="#323232")
         self.history_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self.history_frame, anchor="nw")
+        history_window = canvas.create_window((0, 0), window=self.history_frame, anchor="nw")
+
+        def resize_frame(event):
+            canvas.itemconfig(history_window, width=event.width)
+
+        canvas.bind("<Configure>", resize_frame)
 
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -220,7 +220,7 @@ class FinanceCalcApp:
     def refresh_history(self):
         for widget in self.history_frame.winfo_children():
             widget.destroy()
-        for op in self.operations:
+        for op in reversed(self.operations):
             base = f"[{op.timestamp.strftime('%Y-%m-%d %H:%M')}] {op.kind}: {op.amount:.2f} ₽   Balance: {op.balance:.2f} ₽"
             op_frame = tk.Frame(self.history_frame, bg="#3a3a3a")
             op_frame.pack(fill="x", padx=10, pady=3)
