@@ -133,6 +133,7 @@ class FinanceCalcApp:
         self.item_selector = None
         self.type_selector = None
         self.list_frame = None
+        self.item_tree = None
         self.account_frame = None
         self.history_frame = None
         self.available_items = []
@@ -143,30 +144,24 @@ class FinanceCalcApp:
         self.s1 = ttk.Style()
         self.s1.theme_use("default")
         self.s1.configure("Custom.TCombobox", font=("Arial", 20), padding=1, arrowsize=20)
-
         self.balance_var.set(f"Balance: {float(self.balance / 100):.2f} ₽")
-        app_ref = self
 
         style = ttk.Style()
-        #style.theme_use("clam")
         style.theme_use("default")
         style.configure("TNotebook", background="#323232", borderwidth=0)
         style.configure("TNotebook.Tab", background="#323232", foreground="#e6e6e6", padding=(35, 7), font=('Segoe UI', 10, 'bold'))
         style.map("TNotebook.Tab", background=[("selected", "#3a3a3a")], foreground=[("selected", "#ffffff")])
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True, padx=2, pady=2)
-
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_selected)
 
         self.load_data()
-
         self.setup_tab_main()
         self.setup_tab_items()
         self.setup_tab_history()
         self.setup_tab_pie()
         self.setup_tab_graph()
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
 
     def setup_tab_main(self):
         tab = tk.Frame(self.notebook, bg="#323232")
@@ -215,8 +210,38 @@ class FinanceCalcApp:
 
     def setup_tab_items(self):
         tab = tk.Frame(self.notebook, bg="#323232")
-        self.notebook.add(tab, text=ITEMS)
 
+        style = ttk.Style(self.root)
+        self.root.configure(bg="#2b2b2b")
+        style.theme_use("default")
+
+        # Treeview style
+        style.configure("Treeview",background="#2b2b2b", foreground="#ffffff", fieldbackground="#2b2b2b", rowheight=26, font=('Segoe UI', 12), bordercolor="#5a5a5a", borderwidth=1)
+        # Heading style
+        style.configure("Treeview.Heading", background="#3c3f41", foreground="#ffffff", font=('Segoe UI', 12, 'bold'), borderwidth=1)
+        # Selected row styling
+        style.map("Treeview", background=[('selected', '#4a708b')], foreground=[('selected', '#ffffff')])
+
+
+
+        columns = (ITEM, TYPE, PRICE, "Total purchased", "Week", "Month", "Year")
+        self.item_tree = ttk.Treeview(tab, columns=columns, show="headings", style="Treeview")
+        self.item_tree.pack(fill="both", expand=True)
+        for col in columns:
+            self.item_tree.heading(col, text=col)
+            if col == ITEM:
+                self.item_tree.column(col, anchor="center", width=180)
+            else:
+                self.item_tree.column(col, anchor="center", width=100)
+
+        for i in self.available_items:
+            bg = "#333333" if self.available_items.index(i) % 2 == 0 else "#3a3a3a"
+            self.item_tree.insert("", "end", values=(i.name, i.item_type, i.price, i.count), tags=(f'row{i}',))
+            self.item_tree.tag_configure(f'row{i}', background=bg)
+
+
+
+        self.notebook.add(tab, text=ITEMS)
 
     def setup_tab_history(self):
         tab = tk.Frame(self.notebook, bg="#323232")
@@ -296,7 +321,6 @@ class FinanceCalcApp:
                 self.available_types = data.get("item_types", [])
                 self.operations = [Operation.from_dict(op) for op in data.get("history", [])]
                 self.available_items = [Item(**item) for item in data.get("items", [])]
-
 
     def add_income(self):
         try:
@@ -410,7 +434,6 @@ class FinanceCalcApp:
             widget.destroy()
         for i, item in enumerate(self.item_list):
             ItemGUI(self.list_frame, self, item)
-
 
 if __name__ == "__main__":
     main_window = tk.Tk()
